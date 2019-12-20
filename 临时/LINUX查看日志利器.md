@@ -1,4 +1,11 @@
-# LINUX查看日志利器
+---
+title: LINUX查看日志利器
+date: 2019-11-25 20:09:50
+categories: 工具
+description: 实习期间所学的一些开发技巧。
+---
+
+# LINUX查看日志利器理
 
 常用命令
 

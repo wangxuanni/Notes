@@ -1,3 +1,10 @@
+---
+title: 令人又爱又恨的git
+date: 2019-12-10 22:19:50
+categories: 工具
+description: 实习期间所学的一些开发技巧。
+---
+
 ## add与commit
 
 首先，选择一个合适的地方，创建一个空目录
@@ -75,13 +82,19 @@ git branch #查看分支
 
 
 
-## 解决冲突
+## 分支合并
 
-如果两个分支的修改内容不一样，Git无法执行“快速合并”，必须手动选择。
+在实习的时候我经常遇到这样尴尬的情况
 
-`*git fetch`是将远程主机的最新内容拉到本地，用户在检查了以后决定是否合并到工作本机分支中。*
+比如：commit提交到本地分支了，切换到远程分支全没有了。解决办法：把本地和远程的分支和一下。
 
-*而`git pull` 则是将远程主机的最新内容拉下来后直接合并，即：`git pull = git fetch + git merge`，这样可能会产生冲突，需要手动解决。*
+再比如：在我的分支上明明有的方法，与其他的预发分支合并也没问题。发上去应用构建居然报错找不方法？？？原来是别人发布了一次，此时主分支就和我不一样了。本地分支当然能看到该方法，切到构建分支发现并没有这个方法。解决办法：把我的分支和主分支合并一下
+
+再再比如：
+
+Commit之后切换分支了，就commit不了，显示没有变更。解决方法：嘿嘿还是分支合并就vans了，惊不惊喜意不意外？
+
+那么问题来了，怎么万无一失的合并分支，并手动解决冲突？
 
 1. git fetch
 
@@ -97,16 +110,19 @@ git branch #查看分支
 
 7. git push
 
-   
+  
 
+    
+  
    git log --graph --pretty=oneline --abbrev-commit可以查看分支合并情况。
+   
+   
+   
+   顺便说一下pull和fetch的区别
 
-```
-$ git merge feature1
-Auto-merging readme.txt
-CONFLICT (content): Merge conflict in readme.txt
-Automatic merge failed; fix conflicts and then commit the result.
-```
+`*git fetch`是将远程主机的最新内容拉到本地，用户在检查了以后决定是否合并到工作本机分支中。*
+
+*而`git pull` 则是将远程主机的最新内容拉下来后直接合并，即：`git pull = git fetch + git merge`，这样可能会产生冲突，需要手动解决。*
 
 
 
@@ -116,9 +132,7 @@ Automatic merge failed; fix conflicts and then commit the result.
 git merge --no-ff -m "merge with no-ff" dev
 ```
 
-### 和主分支合并
 
-有时候在某个分支上开发了一段时间，这时有人发布了最新内容，你的分支就和最新的master冲突了，当然得在本地合并更新一下
 
 ## stash
 
@@ -135,3 +149,13 @@ git stash
 ```
 
 如果要丢弃一个没有被合并过的分支，可以通过`git branch -D <name>`强行删除。
+
+
+
+## 小技巧
+
+code review已提交的代码，点击主分支右键compare with current。
+
+![Pasted Graphic](/Users/wangnini/Desktop/Pasted Graphic.png)
+
+https://backlog.com/git-tutorial/cn/stepup/stepup7_5.html
