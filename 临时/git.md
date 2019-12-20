@@ -63,9 +63,7 @@ git checkout -- test.txt
 
 ## 分支
 
-因为创建、合并和删除分支非常快，所以Git鼓励你使用分支完成某个任务，合并后再删掉分支，这和直接在`master`分支上工作效果是一样的，但过程更安全。
-
-切换分支和撤销修改是同一个关键词，确实有点令人迷惑，不过切换分支的checkout也可以用switch替换
+切换分支和撤销修改是同一个关键词checkout，确实有点令人迷惑，不过切换分支的checkout也可以用switch替换
 
 ```
 git checkout -b dev #创建并切换到dev分支
@@ -75,12 +73,33 @@ git branch -d dev #删除dev分支
 git branch #查看分支
 ```
 
-## 冲突
 
-1. 如果两个分支的修改内容不一样，Git无法执行“快速合并”，必须手动选择。
-2. git status查看是哪个文件出现了冲突
-3. 打开这个文件，发现git会`<<<<<<<`，`=======`，`>>>>>>>`标记出不同分支的内容，它保留了两个分支冲突的地方，需要手动进行修改。
-4. 在提交就ok了， 删除`feature1`分支。git log --graph --pretty=oneline --abbrev-commit查看分支合并情况。
+
+## 解决冲突
+
+如果两个分支的修改内容不一样，Git无法执行“快速合并”，必须手动选择。
+
+`*git fetch`是将远程主机的最新内容拉到本地，用户在检查了以后决定是否合并到工作本机分支中。*
+
+*而`git pull` 则是将远程主机的最新内容拉下来后直接合并，即：`git pull = git fetch + git merge`，这样可能会产生冲突，需要手动解决。*
+
+1. git fetch
+
+2. git checkout 分支一
+
+3. git merge origin/分支二417c909ab76eb47c8fc033479904544054e8ea0e
+
+4. 解决冲突，有一些会自动合并，必须手动解决的会在控制台输入什么类。加上`<<<<<<<`，`=======`，`>>>>>>>`这种，跟着报错提示很容易找到地方。
+
+5. git add -u  记得重新add一下否则会提示冲突没有解决
+
+6. git commit -m 'XXXXX'
+
+7. git push
+
+   
+
+   git log --graph --pretty=oneline --abbrev-commit可以查看分支合并情况。
 
 ```
 $ git merge feature1
@@ -97,7 +116,9 @@ Automatic merge failed; fix conflicts and then commit the result.
 git merge --no-ff -m "merge with no-ff" dev
 ```
 
+### 和主分支合并
 
+有时候在某个分支上开发了一段时间，这时有人发布了最新内容，你的分支就和最新的master冲突了，当然得在本地合并更新一下
 
 ## stash
 
