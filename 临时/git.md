@@ -158,5 +158,5 @@ code review已提交的代码，点击主分支右键compare with current。
 
 ![Pasted Graphic](/Users/wangnini/Desktop/Pasted Graphic.png)
 
-强烈推荐这个教程，深入浅出
+强烈推荐这个教程，深入浅出.
 https://backlog.com/git-tutorial/cn/stepup/stepup7_5.html
