@@ -69,6 +69,10 @@ static class Node<K,V> implements Map.Entry<K,V> {{
 }
 ```
 
+![img](https://i.loli.net/2019/05/08/5cd1d2be77958.jpg)
+
+(图片来源于网络)
+
 ## 位运算
 
 HashMap的位运算可以说是老*猪带胸罩，一套接一套的。
