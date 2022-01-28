@@ -454,10 +454,12 @@ final void lock() {
 ## Synchronized和ReentrantLock区别
 
 1）ReentrantLock显示获得、释放锁，synchronized隐式获得释放锁
-2）ReentrantLock可响应中断、可轮回，synchronized是不可以响应中断的，锁中断可以避免死锁。
-3）ReentrantLock是API级别的，synchronized是JVM级别的
-4）ReentrantLock可以实现公平锁
-5）ReentrantLock通过Condition可以绑定多个条件
+2）ReentrantLock可响应中断、可轮回，方法是lockInterruptibly()，synchronized是不可以响应中断的，锁中断可以避免死锁。等待可中断是指当持有锁的线程长期不释放锁的时候，正在等待的线程可以选择放弃等待，改为处理其他事情。
+3）ReentrantLock是API级别的，需要lock()和unlock()方法配合try/finally语句块来完成。synchronized是java语言的关键字，需要jvm实现。
+4）ReentrantLock可以实现公平锁。公平锁是指多个线程在等待同一个锁时，必须按照申请的时间顺序来依次获得锁；而非公平锁则不能保证这一点。非公平锁在锁被释放时，任何一个等待锁的线程都有机会获得锁。
+5）ReentrantLock通过Condition可以绑定多个条件，用来实现分组需要唤醒的线程们，可以精确唤醒，而不像synchronized那样随便唤醒一个线程或者全部线程。
 6）底层实现不一样， synchronized是同步阻塞，使用的是悲观并发策略，lock是同步非阻塞，采用的是乐观并发策略
+
+
 
 ·     
