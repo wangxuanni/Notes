@@ -4,15 +4,17 @@
 
 
 
+### dubbo一次请求的过程
 
+1. [客户端代理类]客户端调用业务接口方法，实际是调用客户端生成的代理类，因为dubbo利用spirng将代理类实例注入到业务接口。
+2. [面向集群]客户端代理类通过 cluster 从 directory 中获取invoker列表，再根据router 的过滤。
+3. [构造请求]根据url的协议构造请求头，然后将调用参数封装成invocation，选择一种协议序列化之后构造塞入请求体中，
+4. [网络传输]通过 NettyClient 发起远程调用。
+5. [服务器响应]服务器收到请求后，由服务器生成的代理类，根据请求中的参数找到本地实现类，并且调用它的方法。返回结果。
 
 
 
 ### Dubbo 的工作原理/分层架构
-
-> 左边淡蓝背景的为服务消费方使用的接口，右边淡绿色背景的为服务提供方使用的接口，位于中轴线上的为双方都用到的接口。
-
-![dubbo-framework](https://guide-blog-images.oss-cn-shenzhen.aliyuncs.com/source-code/dubbo/dubbo-framework.jpg)
 
 - **config 配置层**：Dubbo相关的配置。支持代码配置，同时也支持基于 Spring  来做配置，以 `ServiceConfig`, `ReferenceConfig` 为中心
 - **proxy 服务代理层**：调用远程方法像调用本地的方法一样简单的一个关键，真实调用过程依赖代理类，以 `ServiceProxy` 为中心。
@@ -81,10 +83,6 @@ xxx=com.xxx.XxxLoadBalance
 
 其他还有很多可供扩展的选择，你可以在[官方文档@SPI扩展实现](https://dubbo.apache.org/zh/docs/v2.7/dev/impls/)这里找到。
 
-![](https://img-blog.csdnimg.cn/20210328091015555.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzM0MzM3Mjcy,size_16,color_FFFFFF,t_70)
-
-
-
 ### 基于dubbo怎么做服务治理，降级和重试
 
 
@@ -109,9 +107,11 @@ xxx=com.xxx.XxxLoadBalance
 
 ### Dubbo 提供的负载均衡策略有哪些？
 
-在集群负载均衡时，Dubbo 提供了多种均衡策略，默认为 `random` 随机调用。我们还可以自行扩展负载均衡策略（参考Dubbo SPI机制）。
+默认为加权随机调用。我们还可以自行扩展负载均衡策略（参考Dubbo SPI机制）。
 
 在 Dubbo 中，所有负载均衡实现类均继承自 `AbstractLoadBalance`，该类实现了 `LoadBalance` 接口，并封装了一些公共的逻辑。
+
+官方文档对负载均衡这部分的介绍非常详细，推荐小伙伴们看看，地址：[https://dubbo.apache.org/zh/docs/v2.7/dev/source/loadbalance/#m-zhdocsv27devsourceloadbalance](https://dubbo.apache.org/zh/docs/v2.7/dev/source/loadbalance/#m-zhdocsv27devsourceloadbalance ) 。
 
 ```java
 public abstract class AbstractLoadBalance implements LoadBalance {
@@ -132,11 +132,7 @@ public abstract class AbstractLoadBalance implements LoadBalance {
 }
 ```
 
-`AbstractLoadBalance` 的实现类有下面这些：
 
-![](https://guide-blog-images.oss-cn-shenzhen.aliyuncs.com/java-guide-blog/image-20210326105257812.png)
-
-官方文档对负载均衡这部分的介绍非常详细，推荐小伙伴们看看，地址：[https://dubbo.apache.org/zh/docs/v2.7/dev/source/loadbalance/#m-zhdocsv27devsourceloadbalance](https://dubbo.apache.org/zh/docs/v2.7/dev/source/loadbalance/#m-zhdocsv27devsourceloadbalance ) 。
 
 ####  RandomLoadBalance
 
@@ -195,15 +191,11 @@ public class RandomLoadBalance extends AbstractLoadBalance {
 
 `LeastActiveLoadBalance` 直译过来就是**最小活跃数负载均衡**。
 
-这个名字起得有点不直观，不仔细看官方对活跃数的定义，你压根不知道这玩意是干嘛的。
-
-我这么说吧！初始状态下所有服务提供者的活跃数均为 0（每个服务提供者的中特定方法都对应一个活跃数，我在后面的源码中会提到），每收到一个请求后，对应的服务提供者的活跃数 +1，当这个请求处理完之后，活跃数 -1。
+初始状态下所有服务提供者的活跃数均为 0，每收到一个请求后，对应的服务提供者的活跃数 +1，当这个请求处理完之后，活跃数 -1。
 
 因此，**Dubbo 就认为谁的活跃数越少，谁的处理速度就越快，性能也越好，这样的话，我就优先把请求给活跃数少的服务提供者处理。**
 
-**如果有多个服务提供者的活跃数相等怎么办？**
-
-很简单，那就再走一遍  `RandomLoadBalance` 。
+如果有多个服务提供者的活跃数相等怎么办？那就用默认的加权随机
 
 ```java
 public class LeastActiveLoadBalance extends AbstractLoadBalance {
@@ -287,9 +279,7 @@ public class RpcStatus {
 
 ####  ConsistentHashLoadBalance
 
-`ConsistentHashLoadBalance`  小伙伴们应该也不会陌生，在分库分表、各种集群中就经常使用这个负载均衡策略。
-
-`ConsistentHashLoadBalance` 即**一致性Hash负载均衡策略**。 `ConsistentHashLoadBalance` 中没有权重的概念，具体是哪个服务提供者处理请求是由你的请求的参数决定的，也就是说相同参数的请求总是发到同一个服务提供者。
+`ConsistentHashLoadBalance` 即**一致性Hash负载均衡策略**。 `ConsistentHashLoadBalance` 中没有权重的概念，具体是哪个服务提供者处理请求是由你的请求的参数决定的，也就是说**相同参数的请求总是发到同一个服务提供者。**
 
 ![](https://guide-blog-images.oss-cn-shenzhen.aliyuncs.com/java-guide-blog/consistent-hash-data-incline.jpg)
 
@@ -299,25 +289,19 @@ public class RpcStatus {
 
 ![](https://guide-blog-images.oss-cn-shenzhen.aliyuncs.com/java-guide-blog/consistent-hash-invoker.jpg)
 
-官方有详细的源码分析：[https://dubbo.apache.org/zh/docs/v2.7/dev/source/loadbalance/#23-consistenthashloadbalance](https://dubbo.apache.org/zh/docs/v2.7/dev/source/loadbalance/#23-consistenthashloadbalance) 。这里还有一个相关的 [PR#5440](https://github.com/apache/dubbo/pull/5440) 来修复老版本中 ConsistentHashLoadBalance 存在的一些Bug。感兴趣的小伙伴，可以多花点时间研究一下。我这里不多分析了，这个作业留给你们！
+官方有详细的源码分析：[https://dubbo.apache.org/zh/docs/v2.7/dev/source/loadbalance/#23-consistenthashloadbalance](https://dubbo.apache.org/zh/docs/v2.7/dev/source/loadbalance/#23-consistenthashloadbalance) 。这里还有一个相关的 [PR#5440](https://github.com/apache/dubbo/pull/5440) 来修复老版本中 ConsistentHashLoadBalance 存在的一些Bug。
 
 ####  RoundRobinLoadBalance
 
-加权轮询负载均衡。
+加权轮询负载均衡。**比加权随机更加平均。**
 
 轮询就是把请求依次分配给每个服务提供者。加权轮询就是在轮询的基础上，让更多的请求落到权重更大的服务提供者上。比如假如有两个提供相同服务的服务器 S1,S2，S1的权重为7，S2的权重为3。
 
-如果我们有 10 次请求，那么  7 次会被 S1处理，3次被 S2处理。
-
-但是，如果是 `RandomLoadBalance` 的话，很可能存在10次请求有9次都被 S1 处理的情况（概率性问题）。
-
-Dubbo 中的 `RoundRobinLoadBalance` 的代码实现被修改重建了好几次，Dubbo-2.6.5 版本的 `RoundRobinLoadBalance` 为平滑加权轮询算法。
+如果我们有 10 次请求，那么  7 次会被 S1处理，3次被 S2处理。但是，如果是 `RandomLoadBalance` 的话，很可能存在10次请求有9次都被 S1 处理的情况（概率性问题）。
 
 
 
 ### Dubbo 支持哪些序列化方式呢？
-
-![](https://img-blog.csdnimg.cn/20210328092219640.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzM0MzM3Mjcy,size_16,color_FFFFFF,t_70)
 
 Dubbo 支持多种序列化方式：JDK自带的序列化、hessian2、JSON、Kryo、FST、Protostuff，ProtoBuf等等。
 
@@ -336,45 +320,19 @@ JSON 序列化由于性能问题，我们一般也不会考虑使用。
 
 Kryo和FST这两种序列化方式是 Dubbo 后来才引入的，性能非常好。不过，这两者都是专门针对 Java 语言的。Dubbo 官网的一篇文章中提到说推荐使用 Kryo 作为生产环境的序列化方式。(文章地址：[https://dubbo.apache.org/zh/docs/v2.7/user/references/protocol/rest/](https://dubbo.apache.org/zh/docs/v2.7/user/references/protocol/rest/))
 
-![](https://my-blog-to-use.oss-cn-beijing.aliyuncs.com/2020-8/569e541a-22b2-4846-aa07-0ad479f07440.png)
-
-Dubbo 官方文档中还有一个关于这些[序列化协议的性能对比图](https://dubbo.apache.org/zh/docs/v2.7/user/serialization/#m-zhdocsv27userserialization)可供参考。
-
-![](https://img-blog.csdnimg.cn/20210328093219609.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzM0MzM3Mjcy,size_16,color_FFFFFF,t_70)
-
 
 
 ### Dubbo 的微内核架构
 
-Dubbo 采用 微内核（Microkernel） + 插件（Plugin） 模式，简单来说就是微内核架构。微内核只负责组装插件。
+Dubbo 采用 微内核架构，该架构包含两类组件：**核心系统（core system）** 和 **插件模块（plug-in modules）**。
 
-**何为微内核架构呢？** 《软件架构模式》 这本书是这样介绍的：
-
-> 微内核架构模式（有时被称为插件架构模式）是实现基于产品应用程序的一种自然模式。基于产品的应用程序是已经打包好并且拥有不同版本，可作为第三方插件下载的。然后，很多公司也在开发、发布自己内部商业应用像有版本号、说明及可加载插件式的应用软件（这也是这种模式的特征）。微内核系统可让用户添加额外的应用如插件，到核心应用，继而提供了可扩展性和功能分离的用法。
-
-微内核架构包含两类组件：**核心系统（core system）** 和 **插件模块（plug-in modules）**。
-
-![](https://guide-blog-images.oss-cn-shenzhen.aliyuncs.com/source-code/dubbo/%E5%BE%AE%E5%86%85%E6%A0%B8%E6%9E%B6%E6%9E%84%E7%A4%BA%E6%84%8F%E5%9B%BE.png)
-
-核心系统提供系统所需核心能力，插件模块可以扩展系统的功能。因此， 基于微内核架构的系统，非常易于扩展功能。
-
-我们常见的一些IDE，都可以看作是基于微内核架构设计的。绝大多数 IDE比如IDEA、VSCode都提供了插件来丰富自己的功能。
-
-正是因为Dubbo基于微内核架构，才使得我们可以随心所欲替换Dubbo的功能点。比如你觉得Dubbo 的序列化模块实现的不满足自己要求，没关系啊！你自己实现一个序列化模块就好了啊！
-
-通常情况下，微核心都会采用 Factory、IoC、OSGi 等方式管理插件生命周期。Dubbo 不想依赖 Spring 等 IoC 容器，也不想自已造一个小的 IoC 容器（过度设计），因此采用了一种最简单的 Factory 方式管理插件 ：**JDK 标准的 SPI 扩展机制** （`java.util.ServiceLoader`）。
+核心系统提供系统所需核心能力，插件模块可以扩展系统的功能。因此， 基于微内核架构的系统，非常易于扩展功能。Dubbo 采用的管理插件 ：**JDK 标准的 SPI 扩展机制** （`java.util.ServiceLoader`）。
 
 
 
 ### Dubbo 中的 Invoker 概念
 
-`Invoker` 是 Dubbo 领域模型中非常重要的一个概念，你如果阅读过 Dubbo 源码的话，你会无数次看到这玩意。就比如下面我要说的负载均衡这块的源码中就有大量 `Invoker` 的身影。
-
-简单来说，`Invoker` 就是 Dubbo 对远程调用的抽象。
-
-![dubbo_rpc_invoke.jpg](https://guide-blog-images.oss-cn-shenzhen.aliyuncs.com/java-guide-blog/dubbo_rpc_invoke.jpg)
-
-按照 Dubbo 官方的话来说，`Invoker`  分为
+`Invoker` 就是 Dubbo 对远程调用的抽象。分为
 
 - 服务提供 `Invoker` 
 - 服务消费 `Invoker`
@@ -413,3 +371,12 @@ javaguide的
 
 https://github.com/Snailclimb/JavaGuide/blob/master/docs/system-design/distributed-system/rpc/Dubbo.md
 
+
+
+原理讲解
+
+https://www.jianshu.com/p/5fe5534752cb
+
+原理讲解穿插源码关键类
+
+https://www.cnblogs.com/yukaifan/p/dubbo-invoke.html
