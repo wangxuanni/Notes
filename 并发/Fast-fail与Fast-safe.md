@@ -79,7 +79,7 @@ private class Itr implements Iterator<E> {
 
 Fast-fail场景：java.util包下的集合类都是快速失败的，不能在多线程下发生并发修改（迭代过程中被修改）。
 
-Fast-fail场景：java.util.concurrent包下的容器都是安全失败，可以在多线程下并发使用，并发修改。
+Fast-safe场景：java.util.concurrent包下的容器都是安全失败，可以在多线程下并发使用，并发修改。
 
 > [fail_fast和fail_safe的介绍及区别](https://blog.csdn.net/mlym521/article/details/82465126)
 
