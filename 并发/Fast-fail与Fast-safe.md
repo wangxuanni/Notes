@@ -35,7 +35,7 @@ description: Fast-fail与Fast-safe
 
 #### 原理
 
-迭代器在执行next()等方法的时候，都会调用**checkForComodification()**这个方法，查看modCount==expectedModCount如果不相等则抛出异常。
+迭代器在执行next()等方法的时候，都会调用**checkForComodification()**这个方法，查看**modCount**==expectedModCount如果不相等则抛出异常。**即如果预期值和实际值不相等，则抛出异常。**
 
 expectedModcount:这个值在对象被创建的时候就被赋予了一个固定的值modCount。也就是说这个值是不变的。也就是说，如果在迭代器遍历元素的时候，如果modCount这个值发生了改变，那么再次遍历时就会抛出异常。 
 
@@ -65,7 +65,7 @@ private class Itr implements Iterator<E> {
 
 ### 是什么
 
-采用安全失败机制的集合容器，在遍历时不是直接在集合内容上访问的，而是**先复制原有集合内容**，在拷贝的集合上进行遍历。主要是为了在多线程下可以并发的对集合进行更改。
+采用安全失败机制的集合容器，在遍历时不是直接在集合内容上访问的，而是**先复制原有集合内容**，在拷贝的集合上进行遍历。主要是为了在多线程下可以并发的对集合进行更改。比如copyOnWriteArrayList。
 
 ### 原理
 
@@ -79,7 +79,9 @@ private class Itr implements Iterator<E> {
 
 Fast-fail场景：java.util包下的集合类都是快速失败的，不能在多线程下发生并发修改（迭代过程中被修改）。
 
-Fast-safe场景：java.util.concurrent包下的容器都是安全失败，可以在多线程下并发使用，并发修改。
+Fast-safe场景：java.util.concurrent包下的容器大部分是是安全失败，可以在多线程下并发使用，并发修改。
 
 > [fail_fast和fail_safe的介绍及区别](https://blog.csdn.net/mlym521/article/details/82465126)
+>
+> [集合的快速失败和安全失败](https://segmentfault.com/a/1190000039897519)
 
