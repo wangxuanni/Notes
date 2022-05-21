@@ -28,18 +28,27 @@ DI 依赖注入 Dependency Inject. 简单地说就是拿到的对象的属性，
 ![1564554784479](C:\Users\home.11\AppData\Roaming\Typora\typora-user-images\1564554784479.png)
 
 Spring创建、管理对象。Spring容器负责创建对象，装配它们，配置它们并管理它们的整个生命周期。
-•	实例化：Spring对bean进行实例化
-•	填充属性：Spring将值和bean的引用注入到bean对应的属性中
-•	调用BeanNameAware的setBeanName()方法：若bean实现了BeanNameAware接口，Spring将bean的id传递给setBeanName方法
-•	调用BeanFactoryAware的setBeanFactory()方法：若bean实现了BeanFactoryAware接口，Spring调用setBeanFactory方法将BeanFactory容器实例传入
-•	调用ApplicationContextAware的setApplicationContext方法：如果bean实现了ApplicationContextAware接口，Spring将调用setApplicationContext方法将bean所在的应用上下文传入
-•	调用BeanPostProcessor的预初始化方法：如果bean实现了BeanPostProcessor，Spring将调用它们的叛postProcessBeforeInitialization方法
-•	调用InitalizingBean的afterPropertiesSet方法：如果bean实现了InitializingBean接口，Spring将调用它们的afterPropertiesSet方法
-•	如果bean实现了BeanPostProcessor接口，Spring将调用它们的postProcessAfterInitialzation方法
-•	此时bean已经准备就绪，可以被应用程序使用，它们将一直驻留在应用杀死那个下文中，直到该应用的上下文被销毁。
-•	如果bean实现了DisposableBean接口，Spring将调用它的destroy方法。
+**实例化**：Spring对bean进行实例化。spring会推断用哪个构造方法，默认是无参构造方法。这个时候 Bean 中的属性(依赖还都是空的)
+**属性赋值**：获取or创建 Bean 的依赖对象，将他们填充到 Bean 中
+
+**初始化**：**Spring** 提供了大量的扩展接口，如果我们的 **Bean** 实现了这些接口，并实现了接口里面的方法，那么在该阶段会依次调用这些接口的方法。
+
+这些接口注要分为三种
+
+- xxxAware：setBeanName()、setBeanFactory()、setApplicationContext()
+- BeanPostProcessor: postProcessBeforeInitialization()、postProcessAfterInitialzation
+- InitializingBean: afterPropertiesSet()
 
 
+
+初始化后的bean已经准备就绪，可以被应用程序使用、
+**销毁**：如果bean实现了DisposableBean接口，Spring将调用它的destroy方法。
+
+![img](https://upload-images.jianshu.io/upload_images/4558491-dc3eebbd1d6c65f4.png?imageMogr2/auto-orient/strip|imageView2/2/w/823/format/webp)
+
+![Bean生命周期| Home page](http://tru-xu.github.io/2019/07/22/bean-life/BeanFactory-beanlife.jpg)
+
+[请别再问Spring Bean的生命周期了！](https://www.jianshu.com/p/1dec08d290c1)
 
 ## bean的作用域？
 
